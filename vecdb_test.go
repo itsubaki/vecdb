@@ -17,7 +17,8 @@ func Example() {
 		[]string{
 			"1st document is about morning.",
 			"2nd document is about night.",
-		}, []Document{
+		},
+		[]Document{
 			{Title: "Morning", Creator: "John Doe"},
 			{Title: "Night", Creator: "John Doe"},
 		},

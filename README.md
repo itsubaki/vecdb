@@ -3,6 +3,7 @@
 ## Example
 
 ```go
+
 func Example() {
 	type Document struct {
 		Title   string
@@ -14,7 +15,8 @@ func Example() {
 		[]string{
 			"1st document is about morning.",
 			"2nd document is about night.",
-		}, []Document{
+		},
+		[]Document{
 			{Title: "Morning", Creator: "John Doe"},
 			{Title: "Night", Creator: "John Doe"},
 		},
@@ -22,7 +24,7 @@ func Example() {
 		panic(err)
 	}
 
-    top := 3
+	top := 3
 	results, err := m.Search("Hello", top)
 	if err != nil {
 		panic(err)
