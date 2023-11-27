@@ -1,8 +1,11 @@
-# vecdb
+package vecdb_test
 
-## Example
+import (
+	"fmt"
 
-```go
+	"github.com/itsubaki/vecdb"
+)
+
 func Example() {
 	type Document struct {
 		Title   string
@@ -22,7 +25,7 @@ func Example() {
 		panic(err)
 	}
 
-    top := 3
+	top := 3
 	results, err := m.Search("Hello", top)
 	if err != nil {
 		panic(err)
@@ -34,4 +37,3 @@ func Example() {
 
 	// Output:
 }
-```
