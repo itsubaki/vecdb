@@ -40,7 +40,7 @@ func Example() {
 	}
 
 	for _, r := range results {
-		fmt.Println(r.Similarity, r.Metadata)
+		fmt.Println(r.Similarity, r.Text, r.Metadata)
 	}
 
 	// Output:
