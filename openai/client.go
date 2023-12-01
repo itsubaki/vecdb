@@ -29,6 +29,15 @@ func (c *Client) Models() (*Models, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		var msg Error
+		if err := json.NewDecoder(resp.Body).Decode(&msg); err != nil {
+			return nil, fmt.Errorf("decode: %v", err)
+		}
+
+		return nil, fmt.Errorf("status code=%v, message: %v", resp.StatusCode, msg.Error.Message)
+	}
+
 	var models Models
 	if err := json.NewDecoder(resp.Body).Decode(&models); err != nil {
 		return nil, fmt.Errorf("decode: %v", err)

@@ -23,17 +23,6 @@ type Memory[T any] struct {
 	Embedding  func(text string) ([]float64, error)
 }
 
-func New[T any](
-	similarity func(a, b []float64) float64,
-	embedding func(text string) ([]float64, error),
-) *Memory[T] {
-	return &Memory[T]{
-		List:       make([]Vector[T], 0),
-		Similarity: similarity,
-		Embedding:  embedding,
-	}
-}
-
 func (m *Memory[T]) Save(text []string, metadata []T) error {
 	for i := range text {
 		if err := m.save(text[i], metadata[i]); err != nil {

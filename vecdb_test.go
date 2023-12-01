@@ -20,10 +20,11 @@ func Example() {
 		Creator string
 	}
 
-	m := vecdb.New[Metadata](
-		vecdb.Cosine,
-		client.Embedding,
-	)
+	m := vecdb.Memory[Metadata]{
+		Similarity: vecdb.Cosine,
+		Embedding:  client.Embedding,
+	}
+
 	if err := m.Save(
 		[]string{
 			"1st document is about morning.",
