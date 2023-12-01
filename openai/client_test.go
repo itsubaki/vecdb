@@ -8,7 +8,7 @@ import (
 )
 
 func ExampleClient_Models() {
-	c := openai.New("", "")
+	c := openai.Client{}
 	models, err := c.Models()
 	if err != nil {
 		panic(err)

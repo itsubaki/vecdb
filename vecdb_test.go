@@ -9,10 +9,11 @@ import (
 )
 
 func Example() {
-	client := openai.New(
-		os.Getenv("OPENAI_ORG"),
-		os.Getenv("OPENAI_API_KEY"),
-	)
+	client := openai.Client{
+		Org:     os.Getenv("OPENAI_ORG"),
+		APIKey:  os.Getenv("OPENAI_API_KEY"),
+		ModelID: openai.TEXT_EMBEDDING_ADA_002,
+	}
 
 	type Metadata struct {
 		Title   string

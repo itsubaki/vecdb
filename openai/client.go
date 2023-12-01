@@ -17,13 +17,6 @@ type Client struct {
 	ModelID string
 }
 
-func New(org, apiKey string) *Client {
-	return &Client{
-		Org:    org,
-		APIKey: apiKey,
-	}
-}
-
 func (c *Client) Models() (*Models, error) {
 	url, err := url.JoinPath(V1, "/models")
 	if err != nil {
