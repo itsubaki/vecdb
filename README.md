@@ -5,18 +5,18 @@
 ```go
 
 func Example() {
-	type Document struct {
+	type Metadata struct {
 		Title   string
 		Creator string
 	}
 
-	m := vecdb.New[Document]()
+	m := vecdb.New[Metadata]()
 	if err := m.Save(
 		[]string{
 			"1st document is about morning.",
 			"2nd document is about night.",
 		},
-		[]Document{
+		[]Metadata{
 			{Title: "Morning", Creator: "John Doe"},
 			{Title: "Night", Creator: "John Doe"},
 		},
