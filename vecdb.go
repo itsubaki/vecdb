@@ -23,11 +23,14 @@ type Memory[T any] struct {
 	Embedding  func(text string) ([]float64, error)
 }
 
-func New[T any]() *Memory[T] {
+func New[T any](
+	similarity func(a, b []float64) float64,
+	embedding func(text string) ([]float64, error),
+) *Memory[T] {
 	return &Memory[T]{
 		List:       make([]Vector[T], 0),
-		Similarity: Cosine,
-		Embedding:  Embedding,
+		Similarity: similarity,
+		Embedding:  embedding,
 	}
 }
 
@@ -106,9 +109,4 @@ func Top[T any](results []Result[T], n int) []Result[T] {
 	}
 
 	return top
-}
-
-func Embedding(text string) ([]float64, error) {
-	// TODO
-	return []float64{}, nil
 }

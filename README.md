@@ -5,12 +5,20 @@
 ```go
 
 func Example() {
+	client := openai.New(
+		os.Getenv("OPENAI_ORG"),
+		os.Getenv("OPENAI_API_KEY"),
+	)
+
 	type Metadata struct {
 		Title   string
 		Creator string
 	}
 
-	m := vecdb.New[Metadata]()
+	m := vecdb.New[Metadata](
+		vecdb.Cosine,
+		client.Embedding,
+	)
 	if err := m.Save(
 		[]string{
 			"1st document is about morning.",
