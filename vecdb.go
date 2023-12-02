@@ -20,36 +20,28 @@ type Result[T any] struct {
 type Memory[T any] struct {
 	List       []Vector[T]
 	Similarity func(a, b []float64) float64
-	Embedding  func(text string) ([]float64, error)
+	Embedding  func(text []string) ([][]float64, error)
 }
 
 func (m *Memory[T]) Save(text []string, metadata []T) error {
-	for i := range text {
-		if err := m.save(text[i], metadata[i]); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *Memory[T]) save(text string, metadata T) error {
 	v, err := m.Embedding(text)
 	if err != nil {
 		return fmt.Errorf("embedding: %v", err)
 	}
 
-	m.List = append(m.List, Vector[T]{
-		Data:     v,
-		Text:     text,
-		Metadata: metadata,
-	})
+	for i := range v {
+		m.List = append(m.List, Vector[T]{
+			Data:     v[i],
+			Text:     text[i],
+			Metadata: metadata[i],
+		})
+	}
 
 	return nil
 }
 
 func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
-	vq, err := m.Embedding(query)
+	vq, err := m.Embedding([]string{query})
 	if err != nil {
 		return nil, fmt.Errorf("embedding: %v", err)
 	}
@@ -57,7 +49,7 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 	results := make([]Result[T], len(m.List))
 	for i, v := range m.List {
 		results[i] = Result[T]{
-			Similarity: m.Similarity(vq, v.Data),
+			Similarity: m.Similarity(vq[0], v.Data),
 			Vector:     v,
 		}
 	}

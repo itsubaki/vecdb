@@ -16,10 +16,8 @@ type Response struct {
 type Data struct {
 	Object    string    `json:"object"`
 	Index     int       `json:"index"`
-	Embedding Embedding `json:"embedding"`
+	Embedding []float64 `json:"embedding"`
 }
-
-type Embedding []float64
 
 type Usage struct {
 	PromptTokens int `json:"prompt_tokens"`

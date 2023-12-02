@@ -46,16 +46,7 @@ func (c *Client) Models() (*Models, error) {
 	return &models, nil
 }
 
-func (c *Client) Embedding(text string) ([]float64, error) {
-	out, err := c.Embeddings([]string{text})
-	if err != nil {
-		return nil, fmt.Errorf("embeddings: %v", err)
-	}
-
-	return out[0], nil
-}
-
-func (c *Client) Embeddings(text []string) ([]Embedding, error) {
+func (c *Client) Embeddings(text []string) ([][]float64, error) {
 	url, err := url.JoinPath(V1, "/embeddings")
 	if err != nil {
 		return nil, fmt.Errorf("join path: %v", err)
@@ -83,7 +74,7 @@ func (c *Client) Embeddings(text []string) ([]Embedding, error) {
 		return nil, fmt.Errorf("decode: %v", err)
 	}
 
-	out := make([]Embedding, len(res.Data))
+	out := make([][]float64, len(res.Data))
 	for i, d := range res.Data {
 		out[i] = d.Embedding
 	}
