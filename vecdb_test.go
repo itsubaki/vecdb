@@ -22,7 +22,7 @@ func Example() {
 
 	m := vecdb.Memory[Metadata]{
 		Similarity: vecdb.Cosine,
-		Embedding:  client.Embeddings,
+		Embeddings: client.Embeddings,
 	}
 
 	if err := m.Save(

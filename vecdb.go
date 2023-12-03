@@ -20,11 +20,11 @@ type Result[T any] struct {
 type Memory[T any] struct {
 	List       []Vector[T]
 	Similarity func(a, b []float64) float64
-	Embedding  func(text []string) ([][]float64, error)
+	Embeddings func(text []string) ([][]float64, error)
 }
 
 func (m *Memory[T]) Save(text []string, metadata []T) error {
-	v, err := m.Embedding(text)
+	v, err := m.Embeddings(text)
 	if err != nil {
 		return fmt.Errorf("embedding: %v", err)
 	}
@@ -41,7 +41,7 @@ func (m *Memory[T]) Save(text []string, metadata []T) error {
 }
 
 func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
-	vq, err := m.Embedding([]string{query})
+	vq, err := m.Embeddings([]string{query})
 	if err != nil {
 		return nil, fmt.Errorf("embedding: %v", err)
 	}
