@@ -39,7 +39,7 @@ func Example() {
 	}
 
 	top := 3
-	results, err := m.Search("Hello", top)
+	results, err := m.Search("Night and day", top)
 	if err != nil {
 		panic(err)
 	}

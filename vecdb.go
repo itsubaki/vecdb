@@ -72,7 +72,16 @@ func Cosine(x, y []float64) float64 {
 		sum += x[i] * y[i]
 	}
 
-	return sum / (xps * yps)
+	return 1 - (sum / (xps * yps))
+}
+
+func Euclid(x, y []float64) float64 {
+	var sum float64
+	for i := range x {
+		sum += math.Pow(x[i]-y[i], 2)
+	}
+
+	return math.Sqrt(sum)
 }
 
 func Top[T any](results []Result[T], n int) []Result[T] {
