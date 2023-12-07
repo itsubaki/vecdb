@@ -69,6 +69,15 @@ func (c *Client) Embeddings(text []string) ([][]float64, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		var msg Error
+		if err := json.NewDecoder(resp.Body).Decode(&msg); err != nil {
+			return nil, fmt.Errorf("decode: %v", err)
+		}
+
+		return nil, fmt.Errorf("status code=%v, message: %v", resp.StatusCode, msg.Error.Message)
+	}
+
 	var res Response
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return nil, fmt.Errorf("decode: %v", err)
@@ -92,5 +101,10 @@ func (c *Client) do(method, url string, body io.Reader) (*http.Response, error) 
 	req.Header.Add("OpenAI-Organization", c.Org)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", c.APIKey))
 
-	return http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("do: %v", err)
+	}
+
+	return res, nil
 }
