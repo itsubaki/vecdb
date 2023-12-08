@@ -13,7 +13,7 @@ type Vector[T any] struct {
 }
 
 type Result[T any] struct {
-	Similarity float64
+	Score float64
 	Vector[T]
 }
 
@@ -49,8 +49,8 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 	results := make([]Result[T], len(m.List))
 	for i, v := range m.List {
 		results[i] = Result[T]{
-			Similarity: m.Similarity(vq[0], v.Data),
-			Vector:     v,
+			Score:  Score(m.Similarity(vq[0], v.Data)),
+			Vector: v,
 		}
 	}
 
@@ -84,9 +84,13 @@ func Euclid(x, y []float64) float64 {
 	return math.Sqrt(sum)
 }
 
+func Score(v float64) float64 {
+	return 1 / (1 + v)
+}
+
 func Top[T any](results []Result[T], n int) []Result[T] {
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].Similarity > results[j].Similarity
+		return results[i].Score < results[j].Score
 	})
 
 	if n > len(results) {
