@@ -19,7 +19,7 @@ type Result[T any] struct {
 
 type Memory[T any] struct {
 	List       []Vector[T]
-	Similarity func(a, b []float64) float64
+	Distance   func(a, b []float64) float64
 	Embeddings func(text []string) ([][]float64, error)
 }
 
@@ -49,7 +49,7 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 	results := make([]Result[T], len(m.List))
 	for i, v := range m.List {
 		results[i] = Result[T]{
-			Score:  Score(m.Similarity(vq[0], v.Data)),
+			Score:  Score(m.Distance(vq[0], v.Data)),
 			Vector: v,
 		}
 	}
