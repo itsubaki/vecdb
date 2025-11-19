@@ -4,6 +4,8 @@ const (
 	GPT35_TURBO            string = "gpt-3.5-turbo"
 	GPT4                   string = "gpt-4"
 	TEXT_EMBEDDING_ADA_002 string = "text-embedding-ada-002"
+	TEXT_EMBEDDING_3_SMALL string = "text-embedding-3-small"
+	TEXT_EMBEDDING_3_LARGE string = "text-embedding-3-large"
 )
 
 type Models struct {

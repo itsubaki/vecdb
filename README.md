@@ -3,7 +3,6 @@
 ## Example
 
 ```go
-
 func Example() {
 	client := openai.Client{
 		Org:     os.Getenv("OPENAI_ORG"),
@@ -16,31 +15,38 @@ func Example() {
 		Creator string
 	}
 
-	m := vecdb.Memory[Metadata]{
+	db := vecdb.Memory[Metadata]{
 		Distance:   vecdb.Cosine,
 		Embeddings: client.Embeddings,
 	}
-	if err := m.Save(
-		[]string{
-			"1st document is about morning.",
-			"2nd document is about night.",
+
+	if err := db.Save([]vecdb.Doc[Metadata]{
+		{
+			Text: "1st document is about morning.",
+			Metadata: Metadata{
+				Title:   "Morning",
+				Creator: "John Doe",
+			},
 		},
-		[]Metadata{
-			{Title: "Morning", Creator: "John Doe"},
-			{Title: "Night", Creator: "John Doe"},
+		{
+			Text: "2nd document is about night.",
+			Metadata: Metadata{
+				Title:   "Night",
+				Creator: "John Doe",
+			},
 		},
-	); err != nil {
+	}); err != nil {
 		panic(err)
 	}
 
 	top := 3
-	results, err := m.Search("Night and day", top)
+	results, err := db.Search("Night and day", top)
 	if err != nil {
 		panic(err)
 	}
 
 	for _, r := range results {
-		fmt.Println(r.Score, r.Text, r.Metadata)
+		fmt.Println(r.Score, r.Doc.Text, r.Doc.Metadata)
 	}
 
 	// Output:

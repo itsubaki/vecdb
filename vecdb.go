@@ -2,38 +2,45 @@ package vecdb
 
 import (
 	"fmt"
-	"math"
 	"sort"
 )
 
-type Vector[T any] struct {
-	Data     []float64
+type Doc[T any] struct {
+	ID       string
 	Text     string
+	Vector   []float64
 	Metadata T
 }
 
 type Result[T any] struct {
 	Score float64
-	Vector[T]
+	Doc   Doc[T]
 }
 
 type Memory[T any] struct {
-	List       []Vector[T]
+	List       []Doc[T]
 	Distance   func(a, b []float64) float64
 	Embeddings func(text []string) ([][]float64, error)
+	Cache      Cache[T]
 }
 
-func (m *Memory[T]) Save(text []string, metadata []T) error {
+func (m *Memory[T]) Save(docs []Doc[T]) error {
+	text := make([]string, len(docs))
+	for i, d := range docs {
+		text[i] = d.Text
+	}
+
 	v, err := m.Embeddings(text)
 	if err != nil {
 		return fmt.Errorf("embedding: %v", err)
 	}
 
 	for i := range v {
-		m.List = append(m.List, Vector[T]{
-			Data:     v[i],
-			Text:     text[i],
-			Metadata: metadata[i],
+		m.List = append(m.List, Doc[T]{
+			ID:       docs[i].ID,
+			Text:     docs[i].Text,
+			Metadata: docs[i].Metadata,
+			Vector:   v[i],
 		})
 	}
 
@@ -47,45 +54,14 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 	}
 
 	results := make([]Result[T], len(m.List))
-	for i, v := range m.List {
+	for i, doc := range m.List {
 		results[i] = Result[T]{
-			Score:  Score(m.Distance(vq[0], v.Data)),
-			Vector: v,
+			Score: Score(m.Distance(vq[0], doc.Vector)),
+			Doc:   doc,
 		}
 	}
 
 	return Top(results, top), nil
-}
-
-func Cosine(x, y []float64) float64 {
-	xsum, ysum := 0.0, 0.0
-	for i := range x {
-		xsum += x[i] * x[i]
-		ysum += y[i] * y[i]
-	}
-
-	xps := math.Sqrt(xsum + 1e-8)
-	yps := math.Sqrt(ysum + 1e-8)
-
-	var sum float64
-	for i := range x {
-		sum += x[i] * y[i]
-	}
-
-	return 1 - (sum / (xps * yps))
-}
-
-func Euclid(x, y []float64) float64 {
-	var sum float64
-	for i := range x {
-		sum += math.Pow(x[i]-y[i], 2)
-	}
-
-	return math.Sqrt(sum)
-}
-
-func Score(v float64) float64 {
-	return 1 / (1 + v)
 }
 
 func Top[T any](results []Result[T], n int) []Result[T] {
@@ -93,12 +69,9 @@ func Top[T any](results []Result[T], n int) []Result[T] {
 		return results[i].Score < results[j].Score
 	})
 
-	if n > len(results) {
-		n = len(results)
-	}
-
+	n = min(n, len(results))
 	top := make([]Result[T], n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		top[i] = results[i]
 	}
 
