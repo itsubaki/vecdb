@@ -6,7 +6,6 @@ import (
 )
 
 type Doc[T any] struct {
-	ID       string
 	Text     string
 	Vector   []float64
 	Metadata T
@@ -37,7 +36,6 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 
 	for i := range v {
 		m.List = append(m.List, Doc[T]{
-			ID:       docs[i].ID,
 			Text:     docs[i].Text,
 			Metadata: docs[i].Metadata,
 			Vector:   v[i],
@@ -48,6 +46,10 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 }
 
 func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
+	if v, ok := m.Cache.Get(query); ok {
+		return v, nil
+	}
+
 	vq, err := m.Embeddings([]string{query})
 	if err != nil {
 		return nil, fmt.Errorf("embedding: %v", err)
@@ -61,7 +63,14 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 		}
 	}
 
+	m.Cache.Put(query, results)
 	return Top(results, top), nil
+}
+
+func (m *Memory[T]) Rerank(id string, old, latest []Result[T]) {
+	m.Cache.Put(id, latest)
+
+	// TODO: logging
 }
 
 func Top[T any](results []Result[T], n int) []Result[T] {

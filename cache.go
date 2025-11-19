@@ -7,7 +7,7 @@ type Cache[T any] struct {
 	sync.RWMutex
 }
 
-func (c *Cache[T]) Put(id string, results []Result[T]) error {
+func (c *Cache[T]) Put(id string, results []Result[T]) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -16,7 +16,6 @@ func (c *Cache[T]) Put(id string, results []Result[T]) error {
 	}
 
 	c.m[id] = results
-	return nil
 }
 
 func (c *Cache[T]) Get(id string) ([]Result[T], bool) {
