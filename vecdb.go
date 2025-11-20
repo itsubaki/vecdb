@@ -5,10 +5,14 @@ import (
 	"sort"
 )
 
+type DocID string
+
 type Doc[T any] struct {
+	ID       DocID
 	Text     string
 	Vector   []float64
 	Metadata T
+	Ignore   bool
 }
 
 type Result[T any] struct {
@@ -17,10 +21,10 @@ type Result[T any] struct {
 }
 
 type Memory[T any] struct {
-	List       []Doc[T]
 	Distance   func(a, b []float64) float64
 	Embeddings func(text []string) ([][]float64, error)
-	Cache      Cache[T]
+	docs       []Doc[T]
+	cache      Cache[T]
 }
 
 func (m *Memory[T]) Save(docs []Doc[T]) error {
@@ -35,7 +39,8 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 	}
 
 	for i := range v {
-		m.List = append(m.List, Doc[T]{
+		m.docs = append(m.docs, Doc[T]{
+			ID:       docs[i].ID,
 			Text:     docs[i].Text,
 			Metadata: docs[i].Metadata,
 			Vector:   v[i],
@@ -46,7 +51,7 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 }
 
 func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
-	if v, ok := m.Cache.Get(query); ok {
+	if v, ok := m.cache.Get(query); ok {
 		return v, nil
 	}
 
@@ -55,22 +60,24 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 		return nil, fmt.Errorf("embedding: %v", err)
 	}
 
-	results := make([]Result[T], len(m.List))
-	for i, doc := range m.List {
+	results := make([]Result[T], len(m.docs))
+	for i, doc := range m.docs {
 		results[i] = Result[T]{
 			Score: Score(m.Distance(vq[0], doc.Vector)),
 			Doc:   doc,
 		}
 	}
 
-	m.Cache.Put(query, results)
+	m.cache.Put(query, results)
 	return Top(results, top), nil
 }
 
-func (m *Memory[T]) Rerank(id string, old, latest []Result[T]) {
-	m.Cache.Put(id, latest)
+func (m *Memory[T]) Modify(query string, modified Result[T]) {
+	if modified.Doc.Ignore {
+		m.cache.Ignore(query, modified.Doc.ID)
+	}
 
-	// TODO: logging
+	// TODO
 }
 
 func Top[T any](results []Result[T], n int) []Result[T] {
@@ -78,11 +85,5 @@ func Top[T any](results []Result[T], n int) []Result[T] {
 		return results[i].Score < results[j].Score
 	})
 
-	n = min(n, len(results))
-	top := make([]Result[T], n)
-	for i := range n {
-		top[i] = results[i]
-	}
-
-	return top
+	return results[:min(n, len(results))]
 }
