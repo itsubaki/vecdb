@@ -3,7 +3,7 @@ package vecdb
 import "math"
 
 func Cosine(x, y []float64) float64 {
-	xsum, ysum := 0.0, 0.0
+	var xsum, ysum float64
 	for i := range x {
 		xsum += x[i] * x[i]
 		ysum += y[i] * y[i]

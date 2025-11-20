@@ -5,11 +5,10 @@ import (
 	"sort"
 )
 
-type DocID string
+type Text string
 
 type Doc[T any] struct {
-	ID       DocID
-	Text     string
+	Text     Text
 	Vector   []float64
 	Metadata T
 	Ignore   bool
@@ -23,14 +22,14 @@ type Result[T any] struct {
 type Memory[T any] struct {
 	Distance   func(a, b []float64) float64
 	Embeddings func(text []string) ([][]float64, error)
-	docs       []Doc[T]
+	docs       map[Text]Doc[T]
 	cache      Cache[T]
 }
 
 func (m *Memory[T]) Save(docs []Doc[T]) error {
 	text := make([]string, len(docs))
 	for i, d := range docs {
-		text[i] = d.Text
+		text[i] = string(d.Text)
 	}
 
 	v, err := m.Embeddings(text)
@@ -39,12 +38,11 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 	}
 
 	for i := range v {
-		m.docs = append(m.docs, Doc[T]{
-			ID:       docs[i].ID,
+		m.docs[docs[i].Text] = Doc[T]{
 			Text:     docs[i].Text,
 			Metadata: docs[i].Metadata,
 			Vector:   v[i],
-		})
+		}
 	}
 
 	return nil
@@ -52,7 +50,7 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 
 func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 	if v, ok := m.cache.Get(query); ok {
-		return v, nil
+		return Top(v, top), nil
 	}
 
 	vq, err := m.Embeddings([]string{query})
@@ -60,12 +58,12 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 		return nil, fmt.Errorf("embedding: %v", err)
 	}
 
-	results := make([]Result[T], len(m.docs))
-	for i, doc := range m.docs {
-		results[i] = Result[T]{
+	results := make([]Result[T], 0, len(m.docs))
+	for _, doc := range m.docs {
+		results = append(results, Result[T]{
 			Score: Score(m.Distance(vq[0], doc.Vector)),
 			Doc:   doc,
-		}
+		})
 	}
 
 	m.cache.Put(query, results)
@@ -74,7 +72,7 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 
 func (m *Memory[T]) Modify(query string, modified Result[T]) {
 	if modified.Doc.Ignore {
-		m.cache.Ignore(query, modified.Doc.ID)
+		m.cache.Ignore(query, modified.Doc)
 	}
 
 	// TODO

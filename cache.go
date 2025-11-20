@@ -2,18 +2,21 @@ package vecdb
 
 import "sync"
 
+type Query string
+
 type Cache[T any] struct {
-	m      map[string][]Result[T]
-	ignore map[string]map[DocID]struct{}
+	m      map[Query][]Result[T]
+	ignore map[Query]map[Text]struct{}
 	sync.RWMutex
 }
 
-func (c *Cache[T]) Ignore(query string, id DocID) {
-	if c.ignore[query] == nil {
-		c.ignore[query] = make(map[DocID]struct{})
+func (c *Cache[T]) Ignore(query string, doc Doc[T]) {
+	q := Query(query)
+	if c.ignore[q] == nil {
+		c.ignore[q] = make(map[Text]struct{})
 	}
 
-	c.ignore[query][id] = struct{}{}
+	c.ignore[q][doc.Text] = struct{}{}
 }
 
 func (c *Cache[T]) Put(query string, results []Result[T]) {
@@ -21,29 +24,30 @@ func (c *Cache[T]) Put(query string, results []Result[T]) {
 	defer c.Unlock()
 
 	if c.m == nil {
-		c.m = make(map[string][]Result[T])
+		c.m = make(map[Query][]Result[T])
 	}
 
-	c.m[query] = results
+	c.m[Query(query)] = results
 }
 
 func (c *Cache[T]) Get(query string) ([]Result[T], bool) {
 	c.RLock()
 	defer c.RUnlock()
 
-	v, ok := c.m[query]
+	q := Query(query)
+	v, ok := c.m[q]
 	if !ok {
 		return nil, false
 	}
 
-	ig, ok := c.ignore[query]
+	ig, ok := c.ignore[q]
 	if !ok {
 		return v, true
 	}
 
 	var results []Result[T]
 	for _, r := range v {
-		if _, ok := ig[r.Doc.ID]; ok {
+		if _, ok := ig[r.Doc.Text]; ok {
 			continue
 		}
 
