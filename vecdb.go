@@ -37,6 +37,10 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 		return fmt.Errorf("embedding: %v", err)
 	}
 
+	if m.docs == nil {
+		m.docs = make(map[Text]Doc[T])
+	}
+
 	for i := range v {
 		m.docs[docs[i].Text] = Doc[T]{
 			Text:     docs[i].Text,
@@ -70,9 +74,11 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 	return Top(results, top), nil
 }
 
-func (m *Memory[T]) Modify(query string, modified Result[T]) {
-	if modified.Doc.Ignore {
-		m.cache.Ignore(query, modified.Doc)
+func (m *Memory[T]) Modify(query string, modified []Result[T]) {
+	for _, r := range modified {
+		if r.Doc.Ignore {
+			m.cache.Ignore(query, r.Doc)
+		}
 	}
 
 	// TODO
@@ -80,7 +86,7 @@ func (m *Memory[T]) Modify(query string, modified Result[T]) {
 
 func Top[T any](results []Result[T], n int) []Result[T] {
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].Score < results[j].Score
+		return results[i].Score > results[j].Score
 	})
 
 	return results[:min(n, len(results))]

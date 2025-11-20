@@ -11,6 +11,13 @@ type Cache[T any] struct {
 }
 
 func (c *Cache[T]) Ignore(query string, doc Doc[T]) {
+	c.Lock()
+	defer c.Unlock()
+
+	if c.ignore == nil {
+		c.ignore = make(map[Query]map[Text]struct{})
+	}
+
 	q := Query(query)
 	if c.ignore[q] == nil {
 		c.ignore[q] = make(map[Text]struct{})
