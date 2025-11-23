@@ -50,6 +50,11 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 		return fmt.Errorf("embedding: %v", err)
 	}
 
+
+	// save with lock
+	m.Lock()
+	defer m.Unlock()
+
 	if m.docs == nil {
 		m.docs = make(map[DocID]Doc[T])
 	}
@@ -57,10 +62,6 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 	if m.embeddings == nil {
 		m.embeddings = make(map[DocID]Embedding)
 	}
-
-	// save with lock
-	m.Lock()
-	defer m.Unlock()
 
 	for i := range v {
 		m.docs[docs[i].ID] = Doc[T]{
