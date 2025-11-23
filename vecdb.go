@@ -42,19 +42,6 @@ type Memory[T any] struct {
 }
 
 func (m *Memory[T]) Save(docs []Doc[T]) error {
-	// init
-	if m.docs == nil {
-		m.docs = make(map[DocID]Doc[T])
-	}
-
-	if m.embeddings == nil {
-		m.embeddings = make(map[DocID]Embedding)
-	}
-
-	if m.labels == nil {
-		m.labels = make(map[Label]Doc[T])
-	}
-
 	// embeddings
 	text := make([]string, len(docs))
 	for i, d := range docs {
@@ -69,6 +56,18 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 	// save
 	m.Lock()
 	defer m.Unlock()
+
+	if m.docs == nil {
+		m.docs = make(map[DocID]Doc[T])
+	}
+
+	if m.embeddings == nil {
+		m.embeddings = make(map[DocID]Embedding)
+	}
+
+	if m.labels == nil {
+		m.labels = make(map[Label]Doc[T])
+	}
 
 	for i := range v {
 		m.Add(docs[i], v[i])
