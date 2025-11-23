@@ -9,14 +9,14 @@ import (
 type (
 	DocID string
 	EmbID string
+	Label string
 )
 
 type Doc[T any] struct {
 	ID       DocID
-	Label    string
+	Label    Label
 	Text     string
 	Metadata T
-	Ignore   bool
 }
 
 type Embedding struct {
@@ -26,8 +26,9 @@ type Embedding struct {
 }
 
 type Result[T any] struct {
-	Score float64
-	Doc   Doc[T]
+	Score  float64
+	Ignore bool
+	Doc    Doc[T]
 }
 
 type Memory[T any] struct {
@@ -35,11 +36,26 @@ type Memory[T any] struct {
 	Embeddings func(text []string) ([][]float64, error)
 	docs       map[DocID]Doc[T]
 	embeddings map[DocID]Embedding
+	labels     map[Label]Doc[T]
 	cache      Cache[T]
 	sync.RWMutex
 }
 
 func (m *Memory[T]) Save(docs []Doc[T]) error {
+	// init
+	if m.docs == nil {
+		m.docs = make(map[DocID]Doc[T])
+	}
+
+	if m.embeddings == nil {
+		m.embeddings = make(map[DocID]Embedding)
+	}
+
+	if m.labels == nil {
+		m.labels = make(map[Label]Doc[T])
+	}
+
+	// embeddings
 	text := make([]string, len(docs))
 	for i, d := range docs {
 		text[i] = d.Text
@@ -50,34 +66,50 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 		return fmt.Errorf("embedding: %v", err)
 	}
 
-	if m.docs == nil {
-		m.docs = make(map[DocID]Doc[T])
-	}
-
-	if m.embeddings == nil {
-		m.embeddings = make(map[DocID]Embedding)
-	}
-
-	// save with lock
+	// save
 	m.Lock()
 	defer m.Unlock()
 
 	for i := range v {
-		m.docs[docs[i].ID] = Doc[T]{
-			ID:       docs[i].ID,
-			Label:    docs[i].Label,
-			Text:     docs[i].Text,
-			Metadata: docs[i].Metadata,
-		}
-
-		m.embeddings[docs[i].ID] = Embedding{
-			ID:     EmbID(docs[i].ID),
-			DocID:  docs[i].ID,
-			Vector: v[i],
-		}
+		m.Add(docs[i], v[i])
 	}
 
 	return nil
+}
+
+func (m *Memory[T]) Add(doc Doc[T], embed []float64) error {
+	if v, ok := m.labels[doc.Label]; ok {
+		isDup, err := m.IsDuplicated(doc, v)
+		if err != nil {
+			return fmt.Errorf("is duplicated: %v", err)
+		}
+
+		if isDup {
+			return nil
+		}
+	}
+
+	m.labels[doc.Label] = doc
+
+	m.docs[doc.ID] = Doc[T]{
+		ID:       doc.ID,
+		Label:    doc.Label,
+		Text:     doc.Text,
+		Metadata: doc.Metadata,
+	}
+
+	m.embeddings[doc.ID] = Embedding{
+		ID:     EmbID(doc.ID),
+		DocID:  doc.ID,
+		Vector: embed,
+	}
+
+	return nil
+}
+
+func (m *Memory[T]) IsDuplicated(latest, old Doc[T]) (bool, error) {
+	// TODO: AI task
+	return latest.Text == old.Text, nil
 }
 
 func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
@@ -90,7 +122,6 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 		return nil, fmt.Errorf("embedding: %v", err)
 	}
 
-	// get with lock
 	m.RLock()
 	defer m.RUnlock()
 
@@ -111,7 +142,7 @@ func (m *Memory[T]) Modify(query string, modified []Result[T]) {
 	defer m.Unlock()
 
 	for _, r := range modified {
-		if r.Doc.Ignore {
+		if r.Ignore {
 			m.cache.Ignore(query, r.Doc)
 		}
 	}
@@ -121,6 +152,22 @@ func (m *Memory[T]) Modify(query string, modified []Result[T]) {
 	})
 
 	m.cache.Put(query, modified)
+}
+
+func (m *Memory[T]) Docs() []Doc[T] {
+	m.RLock()
+	defer m.RUnlock()
+
+	docs := make([]Doc[T], 0, len(m.docs))
+	for _, d := range m.docs {
+		docs = append(docs, d)
+	}
+
+	sort.Slice(docs, func(i, j int) bool {
+		return docs[i].ID > docs[j].ID
+	})
+
+	return docs
 }
 
 func Top[T any](results []Result[T], n int) []Result[T] {

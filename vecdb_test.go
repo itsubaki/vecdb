@@ -33,34 +33,47 @@ func Example() {
 
 	if err := db.Save([]vecdb.Doc[Metadata]{
 		{
-			ID:   "1",
-			Text: "1st document is about morning.",
+			ID:    "1",
+			Label: "morning",
+			Text:  "1st document is about morning.",
 			Metadata: Metadata{
 				Title:   "Morning",
 				Creator: "John Doe",
 			},
 		},
 		{
-			ID:   "2",
-			Text: "2nd document is about night.",
+			ID:    "2",
+			Label: "night",
+			Text:  "2nd document is about night.",
 			Metadata: Metadata{
 				Title:   "Night",
 				Creator: "John Doe",
 			},
 		},
 		{
-			ID:   "3",
-			Text: "3rd document is about midnight",
+			ID:    "3",
+			Label: "midnight",
+			Text:  "3rd document is about midnight",
 			Metadata: Metadata{
 				Title:   "Midnight",
 				Creator: "John Doe",
 			},
 		},
 		{
-			ID:   "4",
-			Text: "4th document is about daybreak",
+			ID:    "4",
+			Label: "daybreak",
+			Text:  "4th document is about daybreak",
 			Metadata: Metadata{
 				Title:   "Daybreak",
+				Creator: "John Doe",
+			},
+		},
+		{
+			ID:    "5",
+			Label: "morning", // duplicated label
+			Text:  "1st document is about morning.",
+			Metadata: Metadata{
+				Title:   "Morning",
 				Creator: "John Doe",
 			},
 		},
@@ -79,7 +92,7 @@ func Example() {
 	}
 
 	// Ignore the 3rd document
-	results[2].Doc.Ignore = true
+	results[2].Ignore = true
 	db.Modify(query, results)
 	fmt.Println("ignored the 3rd document")
 
@@ -90,6 +103,11 @@ func Example() {
 
 	for _, r := range results {
 		fmt.Printf("%.4f, %q, %+v\n", r.Score, r.Doc.Text, r.Doc.Metadata)
+	}
+	fmt.Println("-")
+
+	for _, doc := range db.Docs() {
+		fmt.Println(doc.ID, doc.Label, doc.Text, doc.Metadata)
 	}
 
 	// Output:
