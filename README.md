@@ -22,6 +22,7 @@ func Example() {
 
 	if err := db.Save([]vecdb.Doc[Metadata]{
 		{
+			ID:  "1",
 			Text: "1st document is about morning.",
 			Metadata: Metadata{
 				Title:   "Morning",
@@ -29,12 +30,16 @@ func Example() {
 			},
 		},
 		{
+			ID:  "2",
 			Text: "2nd document is about night.",
 			Metadata: Metadata{
 				Title:   "Night",
 				Creator: "John Doe",
 			},
 		},
+		//
+		// and more
+		//
 	}); err != nil {
 		panic(err)
 	}

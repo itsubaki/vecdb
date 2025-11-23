@@ -6,7 +6,7 @@ type Query string
 
 type Cache[T any] struct {
 	m      map[Query][]Result[T]
-	ignore map[Query]map[Text]struct{}
+	ignore map[Query]map[DocID]struct{}
 	sync.RWMutex
 }
 
@@ -15,15 +15,15 @@ func (c *Cache[T]) Ignore(query string, doc Doc[T]) {
 	defer c.Unlock()
 
 	if c.ignore == nil {
-		c.ignore = make(map[Query]map[Text]struct{})
+		c.ignore = make(map[Query]map[DocID]struct{})
 	}
 
 	q := Query(query)
 	if c.ignore[q] == nil {
-		c.ignore[q] = make(map[Text]struct{})
+		c.ignore[q] = make(map[DocID]struct{})
 	}
 
-	c.ignore[q][doc.Text] = struct{}{}
+	c.ignore[q][doc.ID] = struct{}{}
 }
 
 func (c *Cache[T]) Put(query string, results []Result[T]) {
@@ -54,7 +54,7 @@ func (c *Cache[T]) Get(query string) ([]Result[T], bool) {
 
 	var results []Result[T]
 	for _, r := range v {
-		if _, ok := ig[r.Doc.Text]; ok {
+		if _, ok := ig[r.Doc.ID]; ok {
 			continue
 		}
 

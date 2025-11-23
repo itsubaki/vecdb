@@ -33,6 +33,7 @@ func Example() {
 
 	if err := db.Save([]vecdb.Doc[Metadata]{
 		{
+			ID:   "1",
 			Text: "1st document is about morning.",
 			Metadata: Metadata{
 				Title:   "Morning",
@@ -40,6 +41,7 @@ func Example() {
 			},
 		},
 		{
+			ID:   "2",
 			Text: "2nd document is about night.",
 			Metadata: Metadata{
 				Title:   "Night",
@@ -47,6 +49,7 @@ func Example() {
 			},
 		},
 		{
+			ID:   "3",
 			Text: "3rd document is about midnight",
 			Metadata: Metadata{
 				Title:   "Midnight",
@@ -54,6 +57,7 @@ func Example() {
 			},
 		},
 		{
+			ID:   "4",
 			Text: "4th document is about daybreak",
 			Metadata: Metadata{
 				Title:   "Daybreak",
