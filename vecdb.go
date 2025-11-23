@@ -50,8 +50,6 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 		return fmt.Errorf("embedding: %v", err)
 	}
 
-
-	// save with lock
 	m.Lock()
 	defer m.Unlock()
 
@@ -91,7 +89,6 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 		return nil, fmt.Errorf("embedding: %v", err)
 	}
 
-	// get with lock
 	m.RLock()
 	defer m.RUnlock()
 
