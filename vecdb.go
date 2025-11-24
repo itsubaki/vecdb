@@ -144,14 +144,21 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 	return Top(out, top), nil
 }
 
-func (m *Memory[T]) Dups() map[Label]map[DocID]Doc[T] {
+func (m *Memory[T]) Dups() map[Label][]Doc[T] {
 	m.RLock()
 	defer m.RUnlock()
 
-	dups := make(map[Label]map[DocID]Doc[T])
+	dups := make(map[Label][]Doc[T])
 	for label, docs := range m.labels {
 		if len(docs) > 1 {
-			dups[label] = docs
+			dups[label] = make([]Doc[T], 0, len(docs))
+			for _, d := range docs {
+				dups[label] = append(dups[label], d)
+			}
+
+			sort.Slice(dups[label], func(i, j int) bool {
+				return dups[label][i].ID < dups[label][j].ID
+			})
 		}
 	}
 

@@ -150,8 +150,8 @@ func Example() {
 	}
 
 	// Output:
-	// label: "morning", doc: {5 morning 1st document is about morning. {Morning John Doe}}
 	// label: "morning", doc: {1 morning 1st document is about morning. {Morning John Doe}}
+	// label: "morning", doc: {5 morning 1st document is about morning. {Morning John Doe}}
 	// removed docID 5
 	// updated docID 1
 	// -
