@@ -12,6 +12,7 @@ func ExampleCache() {
 		{
 			Score: 1.2,
 			Doc: vecdb.Doc[string]{
+				ID:   "1",
 				Text: "bar",
 			},
 		},
@@ -21,8 +22,9 @@ func ExampleCache() {
 	if !ok {
 		panic("no such entity")
 	}
-
-	fmt.Println(v[0].Score, v[0].Doc.Text)
+	for _, r := range v {
+		fmt.Printf("%.1f %s\n", r.Score, r.Doc.Text)
+	}
 
 	// Output:
 	// 1.2 bar

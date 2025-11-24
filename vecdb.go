@@ -36,7 +36,7 @@ type Memory[T any] struct {
 	Embeddings func(text []string) ([][]float64, error)
 	docs       map[DocID]Doc[T]
 	embeddings map[DocID]Embedding
-	labels     map[Label]Doc[T]
+	labels     map[Label]map[DocID]Doc[T]
 	cache      Cache[T]
 	sync.RWMutex
 }
@@ -66,56 +66,39 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 	}
 
 	if m.labels == nil {
-		m.labels = make(map[Label]Doc[T])
+		m.labels = make(map[Label]map[DocID]Doc[T])
 	}
 
 	for i := range v {
-		m.Add(docs[i], v[i])
+		if m.labels[docs[i].Label] == nil {
+			m.labels[docs[i].Label] = make(map[DocID]Doc[T])
+		}
+
+		m.labels[docs[i].Label][docs[i].ID] = Doc[T]{
+			ID:       docs[i].ID,
+			Label:    docs[i].Label,
+			Text:     docs[i].Text,
+			Metadata: docs[i].Metadata,
+		}
+
+		m.docs[docs[i].ID] = Doc[T]{
+			ID:       docs[i].ID,
+			Label:    docs[i].Label,
+			Text:     docs[i].Text,
+			Metadata: docs[i].Metadata,
+		}
+
+		m.embeddings[docs[i].ID] = Embedding{
+			ID:     EmbID(docs[i].ID),
+			DocID:  docs[i].ID,
+			Vector: v[i],
+		}
 	}
 
 	return nil
-}
-
-func (m *Memory[T]) Add(doc Doc[T], embed []float64) error {
-	if v, ok := m.labels[doc.Label]; ok {
-		isDup, err := m.IsDuplicated(doc, v)
-		if err != nil {
-			return fmt.Errorf("is duplicated: %v", err)
-		}
-
-		if isDup {
-			return nil
-		}
-	}
-
-	m.labels[doc.Label] = doc
-
-	m.docs[doc.ID] = Doc[T]{
-		ID:       doc.ID,
-		Label:    doc.Label,
-		Text:     doc.Text,
-		Metadata: doc.Metadata,
-	}
-
-	m.embeddings[doc.ID] = Embedding{
-		ID:     EmbID(doc.ID),
-		DocID:  doc.ID,
-		Vector: embed,
-	}
-
-	return nil
-}
-
-func (m *Memory[T]) IsDuplicated(latest, old Doc[T]) (bool, error) {
-	// TODO: AI task
-	return latest.Text == old.Text, nil
 }
 
 func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
-	if v, ok := m.cache.Get(query); ok {
-		return Top(v, top), nil
-	}
-
 	vq, err := m.Embeddings([]string{query})
 	if err != nil {
 		return nil, fmt.Errorf("embedding: %v", err)
@@ -132,19 +115,63 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 		})
 	}
 
-	m.cache.Put(query, results)
-	return Top(results, top), nil
+	cached, ok := m.cache.Get(query)
+	if !ok {
+		m.cache.Put(query, results)
+		return Top(results, top), nil
+	}
+
+	// merge
+	var out []Result[T]
+	for _, r := range results {
+		if result, found := cached[r.Doc.ID]; found {
+			if result.Ignore {
+				continue
+			}
+
+			out = append(out, result)
+			continue
+		}
+
+		out = append(out, r)
+	}
+
+	return Top(out, top), nil
+}
+
+func (m *Memory[T]) Dups() map[Label]map[DocID]Doc[T] {
+	m.RLock()
+	defer m.RUnlock()
+
+	dups := make(map[Label]map[DocID]Doc[T])
+	for label, docs := range m.labels {
+		if len(docs) > 1 {
+			dups[label] = docs
+		}
+	}
+
+	return dups
+}
+
+func (m *Memory[T]) Remove(docIDs []DocID) {
+	m.Lock()
+	defer m.Unlock()
+
+	for _, id := range docIDs {
+		doc, ok := m.docs[id]
+		if !ok {
+			continue
+		}
+
+		delete(m.labels[doc.Label], id)
+		delete(m.docs, id)
+		delete(m.embeddings, id)
+	}
 }
 
 func (m *Memory[T]) Modify(query string, modified []Result[T]) {
 	m.Lock()
 	defer m.Unlock()
-
-	for _, r := range modified {
-		if r.Ignore {
-			m.cache.Ignore(query, r.Doc)
-		}
-	}
 
 	sort.Slice(modified, func(i, j int) bool {
 		return modified[i].Score > modified[j].Score

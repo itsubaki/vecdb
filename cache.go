@@ -5,25 +5,8 @@ import "sync"
 type Query string
 
 type Cache[T any] struct {
-	m      map[Query][]Result[T]
-	ignore map[Query]map[DocID]struct{}
+	m map[Query]map[DocID]Result[T]
 	sync.RWMutex
-}
-
-func (c *Cache[T]) Ignore(query string, doc Doc[T]) {
-	c.Lock()
-	defer c.Unlock()
-
-	if c.ignore == nil {
-		c.ignore = make(map[Query]map[DocID]struct{})
-	}
-
-	q := Query(query)
-	if c.ignore[q] == nil {
-		c.ignore[q] = make(map[DocID]struct{})
-	}
-
-	c.ignore[q][doc.ID] = struct{}{}
 }
 
 func (c *Cache[T]) Put(query string, results []Result[T]) {
@@ -31,35 +14,23 @@ func (c *Cache[T]) Put(query string, results []Result[T]) {
 	defer c.Unlock()
 
 	if c.m == nil {
-		c.m = make(map[Query][]Result[T])
+		c.m = make(map[Query]map[DocID]Result[T])
 	}
 
-	c.m[Query(query)] = results
+	q := Query(query)
+	if _, ok := c.m[q]; !ok {
+		c.m[q] = make(map[DocID]Result[T])
+	}
+
+	for _, r := range results {
+		c.m[q][r.Doc.ID] = r
+	}
 }
 
-func (c *Cache[T]) Get(query string) ([]Result[T], bool) {
+func (c *Cache[T]) Get(query string) (map[DocID]Result[T], bool) {
 	c.RLock()
 	defer c.RUnlock()
 
-	q := Query(query)
-	v, ok := c.m[q]
-	if !ok {
-		return nil, false
-	}
-
-	ig, ok := c.ignore[q]
-	if !ok {
-		return v, true
-	}
-
-	var results []Result[T]
-	for _, r := range v {
-		if _, ok := ig[r.Doc.ID]; ok {
-			continue
-		}
-
-		results = append(results, r)
-	}
-
-	return results, true
+	v, ok := c.m[Query(query)]
+	return v, ok
 }

@@ -81,20 +81,38 @@ func Example() {
 		panic(err)
 	}
 
-	query, top := "Night and day", 3
+	dup := db.Dups()
+	for label, docs := range dup {
+		for _, doc := range docs {
+			fmt.Printf("label: %q, doc: %v\n", label, doc)
+		}
+	}
+
+	// TODO: AI task to decide which one to remove
+	db.Remove([]vecdb.DocID{"5"})
+	fmt.Println("removed docID 5")
+	fmt.Println("-")
+
+	query, top := "Night and day", 5
 	results, err := db.Search(query, top)
 	if err != nil {
 		panic(err)
 	}
 
 	for _, r := range results {
-		fmt.Printf("%.4f, %q %+v\n", r.Score, r.Doc.Text, r.Doc.Metadata)
+		fmt.Printf("%.4f, %v %q %+v\n", r.Score, r.Doc.ID, r.Doc.Text, r.Doc.Metadata)
 	}
 
 	// Ignore the 3rd document
 	results[2].Ignore = true
+	// Rescore the 1st document
+	results[0].Score = 0.1
+
+	// modify
 	db.Modify(query, results)
-	fmt.Println("ignored the 3rd document")
+	fmt.Println("ignored 3rd document")
+	fmt.Println("rescored 1st document")
+	fmt.Println("-")
 
 	results, err = db.Search(query, top)
 	if err != nil {
@@ -102,13 +120,22 @@ func Example() {
 	}
 
 	for _, r := range results {
-		fmt.Printf("%.4f, %q, %+v\n", r.Score, r.Doc.Text, r.Doc.Metadata)
-	}
-	fmt.Println("-")
-
-	for _, doc := range db.Docs() {
-		fmt.Println(doc.ID, doc.Label, doc.Text, doc.Metadata)
+		fmt.Printf("%.4f, %v %q %+v\n", r.Score, r.Doc.ID, r.Doc.Text, r.Doc.Metadata)
 	}
 
 	// Output:
+	// label: "morning", doc: {1 morning 1st document is about morning. {Morning John Doe}}
+	// label: "morning", doc: {5 morning 1st document is about morning. {Morning John Doe}}
+	// removed docID 5
+	// -
+	// 0.9698, 1 "1st document is about morning." {Title:Morning Creator:John Doe}
+	// 0.9644, 2 "2nd document is about night." {Title:Night Creator:John Doe}
+	// 0.9600, 3 "3rd document is about midnight" {Title:Midnight Creator:John Doe}
+	// 0.9563, 4 "4th document is about daybreak" {Title:Daybreak Creator:John Doe}
+	// ignored 3rd document
+	// rescored 1st document
+	// -
+	// 0.9644, 2 "2nd document is about night." {Title:Night Creator:John Doe}
+	// 0.9563, 4 "4th document is about daybreak" {Title:Daybreak Creator:John Doe}
+	// 0.1000, 1 "1st document is about morning." {Title:Morning Creator:John Doe}
 }
