@@ -29,6 +29,9 @@ func Example() {
 	db := vecdb.Memory[Metadata]{
 		Distance:   vecdb.Cosine,
 		Embeddings: embeddings,
+		Ignore: func(doc vecdb.Doc[Metadata]) bool {
+			return doc.Label == "allnight"
+		},
 	}
 
 	if err := db.Save([]vecdb.Doc[Metadata]{
@@ -74,6 +77,15 @@ func Example() {
 			Text:  "1st document is about morning.",
 			Metadata: Metadata{
 				Title:   "Morning",
+				Creator: "John Doe",
+			},
+		},
+		{
+			ID:    "6",
+			Label: "allnight", // this will be ignored
+			Text:  "1st document is about allnight.",
+			Metadata: Metadata{
+				Title:   "Allnight",
 				Creator: "John Doe",
 			},
 		},
@@ -138,19 +150,19 @@ func Example() {
 	}
 
 	// Output:
-	// label: "morning", doc: {1 morning 1st document is about morning. {Morning John Doe}}
 	// label: "morning", doc: {5 morning 1st document is about morning. {Morning John Doe}}
+	// label: "morning", doc: {1 morning 1st document is about morning. {Morning John Doe}}
 	// removed docID 5
 	// updated docID 1
 	// -
 	// 1.0000, 1 "1st document is about morning." {Title:Morning Creator:John Foo}
-	// 0.9644, 2 "2nd document is about night." {Title:Night Creator:John Doe}
-	// 0.9600, 3 "3rd document is about midnight" {Title:Midnight Creator:John Doe}
-	// 0.9563, 4 "4th document is about daybreak" {Title:Daybreak Creator:John Doe}
+	// 0.9600, 2 "2nd document is about night." {Title:Night Creator:John Doe}
+	// 0.9563, 3 "3rd document is about midnight" {Title:Midnight Creator:John Doe}
+	// 0.9533, 4 "4th document is about daybreak" {Title:Daybreak Creator:John Doe}
 	// ignored 3rd document
 	// rescored 1st document
 	// -
-	// 0.9644, 2 "2nd document is about night." {Title:Night Creator:John Doe}
-	// 0.9563, 4 "4th document is about daybreak" {Title:Daybreak Creator:John Doe}
+	// 0.9600, 2 "2nd document is about night." {Title:Night Creator:John Doe}
+	// 0.9533, 4 "4th document is about daybreak" {Title:Daybreak Creator:John Doe}
 	// 0.1000, 1 "1st document is about morning." {Title:Morning Creator:John Foo}
 }

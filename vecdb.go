@@ -34,6 +34,7 @@ type Result[T any] struct {
 type Memory[T any] struct {
 	Distance   func(a, b []float64) float64
 	Embeddings func(text []string) ([][]float64, error)
+	Ignore     func(doc Doc[T]) bool
 	docs       map[DocID]Doc[T]
 	embeddings map[DocID]Embedding
 	labels     map[Label]map[DocID]Doc[T]
@@ -109,6 +110,10 @@ func (m *Memory[T]) Search(query string, top int) ([]Result[T], error) {
 
 	results := make([]Result[T], 0, len(m.docs))
 	for _, v := range m.embeddings {
+		if m.Ignore != nil && m.Ignore(m.docs[v.DocID]) {
+			continue
+		}
+
 		results = append(results, Result[T]{
 			Score: Score(m.Distance(vq[0], v.Vector)),
 			Doc:   m.docs[v.DocID],
