@@ -88,9 +88,23 @@ func Example() {
 		}
 	}
 
-	// TODO: AI task to decide which one to remove
+	// TODO: AI task to decide which one to remove, update or noop
 	db.Remove([]vecdb.DocID{"5"})
 	fmt.Println("removed docID 5")
+
+	// update
+	db.Save([]vecdb.Doc[Metadata]{
+		{
+			ID:    "1",
+			Label: "morning",
+			Text:  "1st document is about morning.",
+			Metadata: Metadata{
+				Title:   "Morning",
+				Creator: "John Foo",
+			},
+		},
+	})
+	fmt.Println("updated docID 1")
 	fmt.Println("-")
 
 	query, top := "Night and day", 5
@@ -127,8 +141,9 @@ func Example() {
 	// label: "morning", doc: {1 morning 1st document is about morning. {Morning John Doe}}
 	// label: "morning", doc: {5 morning 1st document is about morning. {Morning John Doe}}
 	// removed docID 5
+	// updated docID 1
 	// -
-	// 0.9698, 1 "1st document is about morning." {Title:Morning Creator:John Doe}
+	// 1.0000, 1 "1st document is about morning." {Title:Morning Creator:John Foo}
 	// 0.9644, 2 "2nd document is about night." {Title:Night Creator:John Doe}
 	// 0.9600, 3 "3rd document is about midnight" {Title:Midnight Creator:John Doe}
 	// 0.9563, 4 "4th document is about daybreak" {Title:Daybreak Creator:John Doe}
@@ -137,5 +152,5 @@ func Example() {
 	// -
 	// 0.9644, 2 "2nd document is about night." {Title:Night Creator:John Doe}
 	// 0.9563, 4 "4th document is about daybreak" {Title:Daybreak Creator:John Doe}
-	// 0.1000, 1 "1st document is about morning." {Title:Morning Creator:John Doe}
+	// 0.1000, 1 "1st document is about morning." {Title:Morning Creator:John Foo}
 }
