@@ -82,6 +82,10 @@ func (m *Memory[T]) Save(docs []Doc[T]) error {
 			Metadata: docs[i].Metadata,
 		}
 
+		if len(m.labels[docs[i].Label]) > 1 {
+			continue
+		}
+
 		m.docs[docs[i].ID] = Doc[T]{
 			ID:       docs[i].ID,
 			Label:    docs[i].Label,
