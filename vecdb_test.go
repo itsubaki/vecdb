@@ -29,63 +29,30 @@ func Example() {
 	db := vecdb.Memory[Metadata]{
 		Distance:   vecdb.Cosine,
 		Embeddings: embeddings,
-		Ignore: func(doc vecdb.Doc[Metadata]) bool {
-			return doc.Label == "allnight"
-		},
 	}
 
 	if err := db.Save([]vecdb.Doc[Metadata]{
 		{
-			ID:    "1",
-			Label: "morning",
-			Text:  "1st document is about morning.",
+			ID:   "1",
+			Text: "1st document is about morning.",
 			Metadata: Metadata{
 				Title:   "Morning",
 				Creator: "John Doe",
 			},
 		},
 		{
-			ID:    "2",
-			Label: "night",
-			Text:  "2nd document is about night.",
+			ID:   "2",
+			Text: "2nd document is about night.",
 			Metadata: Metadata{
 				Title:   "Night",
 				Creator: "John Doe",
 			},
 		},
 		{
-			ID:    "3",
-			Label: "midnight",
-			Text:  "3rd document is about midnight",
+			ID:   "3",
+			Text: "3rd document is about midnight",
 			Metadata: Metadata{
 				Title:   "Midnight",
-				Creator: "John Doe",
-			},
-		},
-		{
-			ID:    "4",
-			Label: "daybreak",
-			Text:  "4th document is about daybreak",
-			Metadata: Metadata{
-				Title:   "Daybreak",
-				Creator: "John Doe",
-			},
-		},
-		{
-			ID:    "5",
-			Label: "morning", // duplicated label
-			Text:  "1st document is about morning.",
-			Metadata: Metadata{
-				Title:   "Morning",
-				Creator: "John Doe",
-			},
-		},
-		{
-			ID:    "6",
-			Label: "allnight", // this will be ignored
-			Text:  "1st document is about allnight.",
-			Metadata: Metadata{
-				Title:   "Allnight",
 				Creator: "John Doe",
 			},
 		},
@@ -93,20 +60,8 @@ func Example() {
 		panic(err)
 	}
 
-	dup := db.Dups()
-	for label, docs := range dup {
-		for _, doc := range docs {
-			fmt.Printf("label: %q, doc: %v\n", label, doc)
-		}
-	}
-
-	// TODO: AI task to decide which one to remove, update or noop
-	db.Remove([]vecdb.DocID{"5"})
-	fmt.Println("removed docID 5")
-	fmt.Println("-")
-
 	// search
-	query, top := "Night and day", 5
+	query, top := "Night and day", 2
 	results, err := db.Search(query, top)
 	if err != nil {
 		panic(err)
@@ -116,25 +71,7 @@ func Example() {
 		fmt.Printf("%.4f, %v %q %+v\n", r.Score, r.Doc.ID, r.Doc.Text, r.Doc.Metadata)
 	}
 
-	// Ignore the 3rd document
-	results[2].Ignore = true
-	// Rescore the 1st document
-	results[0].Score = 0.1
-
-	// modify
-	db.Modify(query, results)
-	fmt.Println("ignored 3rd document")
-	fmt.Println("rescored 1st document")
-	fmt.Println("-")
-
-	results, err = db.Search(query, top)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, r := range results {
-		fmt.Printf("%.4f, %v %q %+v\n", r.Score, r.Doc.ID, r.Doc.Text, r.Doc.Metadata)
-	}
-
 	// Output:
+	// 0.9846, 1 "1st document is about morning." {Title:Morning Creator:John Doe}
+	// 0.9765, 2 "2nd document is about night." {Title:Night Creator:John Doe}
 }
